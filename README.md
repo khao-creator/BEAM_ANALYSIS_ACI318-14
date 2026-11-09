@@ -59,15 +59,15 @@ During benchmark audits against hand calculations, five specific implementation 
 
 1. **Uncoupled Torsional Threshold ($\phi T_{\text{th}}$ vs Axial Load $P_u$):**
    * *Implementation:* The engine evaluates pure torsional threshold ($\phi T_{\text{th}}$) uncoupled from axial load $P_u$. 
-   * *Engineering Impact:* Under net axial tension ($P_u < 0$), this yields a slightly higher threshold (+35% at INITIAL section in Case 2) compared to including the axial factor $\sqrt{1 + \frac{P_u}{0.33 A_g \sqrt{f'\_c}}}$.
+   * *Engineering Impact:* Under net axial tension ($P_u < 0$), this yields a slightly higher threshold (+35% at INITIAL section in Case 2) compared to including the axial factor $\sqrt{1 + \frac{P_u}{0.33 A_g \sqrt{f'_c}}}$.
 2. **Tensile Strain Depth Baseline ($d$ vs $d_t$):**
    * *Implementation:* Net tensile strain $\epsilon_t$ is evaluated at the centroid depth of the tension steel group ($d$) rather than the extreme tension bar layer ($d_t$).
    * *Engineering Impact:* A conservative deviation from ACI 21.2.2 that maps lower-bound $\phi$ factors on multi-layer steel layouts.
 3. **Concrete Displacement by Compression Steel ($d' < c$):**
-   * *Implementation:* Concrete area displaced by compression steel is subtracted whenever $d' < c$ ($C_c = 0.85 f'\_c a b - 0.85 f'\_c A'\_s$).
+   * *Implementation:* Concrete area displaced by compression steel is subtracted whenever $d' < c$ ($C_c = 0.85 f'_c a b - 0.85 f'_c A'_s$).
    * *Engineering Impact:* Introduces a minor 1.1%–1.7% neutral axis shift ($c$) relative to hand calculations that check $d' < a$.
 4. **Stirrup Spacing Limit Threshold Baseline ($s_{\max}$):**
-   * *Implementation:* The stirrup spacing limit comparator ($1.1 \sqrt{f'\_c} b d$) in Table 9.7.6.2.2 is evaluated against required stirrup demand ($V_{s,\text{req}}$) rather than provided capacity ($V_{s,\text{prov}}$).
+   * *Implementation:* The stirrup spacing limit comparator ($1.1 \sqrt{f'_c} b d$) in Table 9.7.6.2.2 is evaluated against required stirrup demand ($V_{s,\text{req}}$) rather than provided capacity ($V_{s,\text{prov}}$).
 5. **Longitudinal Torsion Steel ($A_l$) Credit:**
    * *Implementation:* Excess flexural tension and compression reinforcement ($A_{s,\text{prov}} - A_{s,\text{req}}$) are credited toward longitudinal torsion steel demand per ACI 318-14 Sec 9.5.4.3 and Sec 22.7.6.2.2.
 
@@ -75,7 +75,7 @@ During benchmark audits against hand calculations, five specific implementation 
 
 ## Theory & Mathematical Formulations
 
-*(Note: In Metric MKS units, $1.06 \sqrt{f'\_c}$ corresponds to the exact SI conversion of $0.33 \sqrt{f'\_c}\text{ MPa}$, while $1.1 \sqrt{f'\_c}$ is used for consistency with Thai engineering practice.)*
+*(Note: In Metric MKS units, $1.06 \sqrt{f'_c}$ corresponds to the exact SI conversion of $0.33 \sqrt{f'_c}\text{ MPa}$, while $1.10 \sqrt{f'_c}$ is commonly used for consistency with Thai engineering practice.)*
 
 <details>
 <summary><b>Click to expand Module 2: Flexure Engine Formulations</b></summary>
@@ -225,7 +225,7 @@ $$A_{oh} = x_1 \cdot y_1, \quad p_h = 2(x_1 + y_1), \quad A_o = 0.85 A_{oh}$$
 
 $$\phi T_{\text{th}} = \phi \cdot 0.27 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{p_{\text{cp}}}\right) \sqrt{1 + \frac{P_u}{0.33 A_g \sqrt{f'_c}}}$$
 
-$$\phi T_{\text{cr}} = \phi \cdot 1.1 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{p_{\text{cp}}}\right)$$
+$$\phi T_{\text{cr}} = \phi \cdot 1.10 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{p_{\text{cp}}}\right)$$
 
 </div>
 
@@ -286,7 +286,7 @@ $$A_l = \max\left(A_{l,\text{req}}, \, \max(0.0, \, A_{l,\min})\right)$$
 
 2. Run the application:
    ```bash
-   python "concrete_beam_reinforcement_ACI318-14.py"
+   python concrete_beam_reinforcement_ACI318-14.py
    ```
 
 ---
