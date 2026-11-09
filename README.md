@@ -4,19 +4,19 @@
 [![Validation](https://img.shields.io/badge/validation-3%20cases%20audited-green.svg)](#validation--benchmarks)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A high-precision Python desktop application for the structural verification and safety audit of reinforced concrete beam sections under flexure, shear, and combined torsion according to ACI 318-14 specifications.
+A high-precision Python desktop application for the structural verification and safety audit of reinforced concrete beam sections under flexure, shear, and combined torsion according to ACI 318-14 / ACI 318M-14 specifications in Metric MKS units ($\text{kg}$, $\text{cm}$, $\text{ksc}$, $\text{ton}$, $\text{t-m}$).
 
 ![GUI Screenshot](assets/Screenshot.png)
 
 ---
 
-## Features & Engine Pipeline
+## Features & Visual Engine Pipeline
 
-An integrated cross-section verification panel executing step-by-step structural checks across five engineering modules:
+An integrated cross-section verification panel executing step-by-step structural checks across five modular calculation steps:
 
 ```mermaid
 graph LR
-    M1["<b>MODULE 1</b><br/>Geometry & Materials"] --> M2["<b>MODULE 2</b><br/>Flexure Engine"]
+    M1["<b>MODULE 1</b><br/>Geometry & Ingestion"] --> M2["<b>MODULE 2</b><br/>Flexure Engine"]
     M2 --> M3["<b>MODULE 3</b><br/>Shear Engine"]
     M3 --> M4["<b>MODULE 4</b><br/>Torsion Engine"]
     M4 --> M5["<b>MODULE 5</b><br/>Anchorage & Detailing"]
@@ -28,15 +28,248 @@ graph LR
     style M5 fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
 ```
 
-* **Module 1 – Ingestion & Geometry:** Ingests metric MKS units, builds rebar layer depth centroids, and maps effective depths ($d, d'$).
-* **Module 2 – Strain Compatibility Flexure:** Bisection equilibrium solver evaluating strain limits, tension-controlled $\phi$ mapping ($0.65 - 0.90$), and axial load limit ($P_u \le 0.10 f'_c A_g$).
-* **Module 3 – Shear Capacity:** Evaluates $V_c$ with axial compression/tension effects, minimum stirrup area, stirrup spacing limits ($s_{\text{max}}$), and web crushing capacity.
-* **Module 4 – Combined Torsion Interaction:** Evaluates threshold $\phi T_{\text{th}}$, cracking $\phi T_{\text{cr}}$, closed stirrup ratios ($A_t/s$), longitudinal torsion steel ($A_l$), and combined shear-torsion web stress limits.
-* **Module 5 – Anchorage & Detailing:** Computes tension development lengths ($L_d$) according to ACI 25.4.2 based on clear bar spacing and confinement.
+### Module Summary & Engineering Intuition
+
+* **Module 1 – Ingestion & Layer Geometry:** Ingests MKS metric inputs ($b, h, f'_c, f_y, f_{yt}$), computes rebar layer centroids ($y_{\text{bar}}$), effective depths ($d, d'$), and verifies bar clearance limits.
+* **Module 2 – Strain Compatibility Flexure:** Solves strain equilibrium using numerical bisection. Maps section ductility using net tensile strain ($\epsilon_t$) to determine strength reduction factor ($\phi = 0.65 - 0.90$).
+  * *Intuition:* Ensures the beam gives ample warning through visible cracking ($\epsilon_t \ge 0.005$) rather than failing suddenly.
+* **Module 3 – Shear Capacity Engine:** Evaluates concrete shear strength ($V_c$) with axial load modifiers ($P_u$), stirrup contribution ($V_s$), minimum shear steel, and web crushing capacity ($V_{s,\max}$).
+  * *Intuition:* Concrete acts as the first line of defense ($V_c$). If shear demand exceeds $V_c$, closed stirrups ($V_s$) take over to prevent diagonal shear failure.
+* **Module 4 – Combined Torsion Interaction:** Calculates threshold torsion ($\phi T_{\text{th}}$), cracking torsion ($\phi T_{\text{cr}}$), transverse closed stirrups ($A_t/s$), longitudinal torsion steel ($A_l$), and combined shear-torsion web stress limits.
+  * *Intuition:* Torsion behaves like twisting a towel. If $T_u \le \phi T_{\text{th}}$, pure concrete skin is sufficient and torsion can be safely neglected. If $T_u > \phi T_{\text{th}}$, a full 3D steel cage (closed hoops + longitudinal bars) is required.
+* **Module 5 – Anchorage & Detailing:** Computes tension development length ($L_d$) according to ACI 25.4.2 based on clear bar spacing, confinement, and bar size.
 
 ---
 
-## Quick Start
+## Validation & Benchmarks
+
+The calculation engine has been verified against three independent hand-calculated benchmark cases per ACI 318-14 to ensure complete reliability.
+
+| Benchmark Case | Core Objective | Engineering Conditions Audited | Engine Accuracy vs Hand Calc | Calculation Proof Sheet |
+| :--- | :--- | :--- | :--- | :---: |
+| **Case 1: Base** | Normal Baseline Design | Singly & doubly reinforced sections, tension-controlled $\phi = 0.90$, $T_u \le \phi T_{\text{th}}$ (torsion safely neglected). | $\phi M_n$ and $\phi V_n$ differ by $< 0.1\%$. | [PDF Hand Calc](./validation/case1_hand_calc.pdf) |
+| **Case 2: Edge** | Complex Stacked Edge Cases | 2-layer steel, high-strength concrete ($f'_c = 350\text{ ksc}$), axial tension & compression, full torsion interaction. | Documented minor formulation shifts ($\approx 1.9\%$ on $\phi M_n$). END section correctly flagged **UNSAFE** ($UR = 1.097$). | [PDF Hand Calc](./validation/case2_hand_calc.pdf) |
+| **Case 3: Fail** | Unsafe Section Gatekeeping | Tight bar clearance violation, $\epsilon_t < 0.004$, $A_s < A_{s,\min}$, $P_u > 0.10 f'_c A_g$, $s > s_{\max}$, demand exceedance ($M_u > \phi M_n$). | 100% Detection Rate ($3/3$ non-compliant sections flagged **UNSAFE**). | [PDF Hand Calc](./validation/case3_hand_calc.pdf) |
+
+---
+
+## Known Deviations & Engineering Assumptions
+
+During benchmark audits against hand calculations, five specific implementation choices and assumptions were documented:
+
+1. **Uncoupled Torsional Threshold ($\phi T_{\text{th}}$ vs Axial Load $P_u$):**
+   * *Implementation:* The engine evaluates pure torsional threshold ($\phi T_{\text{th}}$) uncoupled from axial load $P_u$. 
+   * *Engineering Impact:* Under net axial tension ($P_u < 0$), this yields a slightly higher threshold (+35% at INITIAL section in Case 2) compared to including the axial factor $\sqrt{1 + \frac{P_u}{0.33 A_g \sqrt{f'\_c}}}$.
+2. **Tensile Strain Depth Baseline ($d$ vs $d_t$):**
+   * *Implementation:* Net tensile strain $\epsilon_t$ is evaluated at the centroid depth of the tension steel group ($d$) rather than the extreme tension bar layer ($d_t$).
+   * *Engineering Impact:* A conservative deviation from ACI 21.2.2 that maps lower-bound $\phi$ factors on multi-layer steel layouts.
+3. **Concrete Displacement by Compression Steel ($d' < c$):**
+   * *Implementation:* Concrete area displaced by compression steel is subtracted whenever $d' < c$ ($C_c = 0.85 f'\_c a b - 0.85 f'\_c A'\_s$).
+   * *Engineering Impact:* Introduces a minor 1.1%–1.7% neutral axis shift ($c$) relative to hand calculations that check $d' < a$.
+4. **Stirrup Spacing Limit Threshold Baseline ($s_{\max}$):**
+   * *Implementation:* The stirrup spacing limit comparator ($1.1 \sqrt{f'\_c} b d$) in Table 9.7.6.2.2 is evaluated against required stirrup demand ($V_{s,\text{req}}$) rather than provided capacity ($V_{s,\text{prov}}$).
+5. **Longitudinal Torsion Steel ($A_l$) Credit:**
+   * *Implementation:* Excess flexural tension and compression reinforcement ($A_{s,\text{prov}} - A_{s,\text{req}}$) are credited toward longitudinal torsion steel demand per ACI 318-14 Sec 9.5.4.3 and Sec 22.7.6.2.2.
+
+---
+
+## Theory & Mathematical Formulations
+
+*(Note: In Metric MKS units, $1.06 \sqrt{f'\_c}$ corresponds to the exact SI conversion of $0.33 \sqrt{f'\_c}\text{ MPa}$, while $1.1 \sqrt{f'\_c}$ is used for consistency with Thai engineering practice.)*
+
+<details>
+<summary><b>Click to expand Module 2: Flexure Engine Formulations</b></summary>
+
+### Flexure Formulations (ACI 318-14 Chapter 22)
+
+* **Whitney Stress Block Depth:**
+<div align="center">
+
+$$a = \beta_1 c$$
+
+</div>
+
+* **Concrete Compression Force:**
+<div align="center">
+
+$$C_c = 0.85 f'_c a b$$
+
+</div>
+
+* **Compression Steel Force (displaced concrete accounted for):**
+<div align="center">
+
+$$C'_s = A'_s (f'_s - 0.85 f'_c)$$
+
+</div>
+
+* **Section Force Equilibrium:**
+<div align="center">
+
+$$C_c + C'_s = T_s + P_u$$
+
+</div>
+
+* **Strength Reduction Factor Mapping ($\phi$):**
+<div align="center">
+
+$$\phi = \begin{cases} 0.90 & \text{if } \epsilon_t \ge 0.005 \quad \text{(Tension-controlled)} \\ 0.65 + 0.25 \frac{\epsilon_t - \epsilon_{ty}}{0.005 - \epsilon_{ty}} & \text{if } \epsilon_{ty} < \epsilon_t < 0.005 \quad \text{(Transition zone)} \\ 0.65 & \text{if } \epsilon_t \le \epsilon_{ty} \quad \text{(Compression-controlled)} \end{cases}$$
+
+</div>
+
+* **Nominal Moment Capacity (about section centroid $y_c = h/2$):**
+<div align="center">
+
+$$M_n = M_{Cc} + M_{Cs} + M_{Ts}$$
+
+</div>
+
+* **Design Moment Verification:**
+<div align="center">
+
+$$\phi M_n \ge M_u$$
+
+</div>
+
+* **Beam Axial Load Applicability Limit (ACI 9.3.1.1):**
+<div align="center">
+
+$$P_u \le 0.10 f'_c A_g$$
+
+</div>
+
+</details>
+
+<details>
+<summary><b>Click to expand Module 3: Shear Engine Formulations</b></summary>
+
+### Shear Formulations (ACI 318-14 Chapter 22)
+
+* **Concrete Shear Resistance ($V_c$ with $\phi = 0.75$):**
+  * **Axial Compression ($P_u > 0$):**
+<div align="center">
+
+$$V_c = 0.53 \left(1 + \frac{P_u}{140 A_g}\right) \sqrt{f'_c} b d$$
+
+</div>
+
+  * **Axial Tension ($P_u < 0$):**
+<div align="center">
+
+$$V_c = \max\left(0, \, 0.53 \left(1 + \frac{P_u}{35 A_g}\right) \sqrt{f'_c} b d\right)$$
+
+</div>
+
+  * **Zero Axial Load ($P_u = 0$):**
+<div align="center">
+
+$$V_c = 0.53 \sqrt{f'_c} b d$$
+
+</div>
+
+* **Stirrup Shear Capacity ($V_s$):**
+<div align="center">
+
+$$V_s = \frac{A_v f_{yt} d}{s}$$
+
+</div>
+
+* **Design Shear Verification:**
+<div align="center">
+
+$$\phi V_n = \phi (V_c + V_s) \ge V_u \quad (\phi = 0.75)$$
+
+</div>
+
+* **Maximum Stirrup Spacing Limits ($s_{\max}$):**
+<div align="center">
+
+$$s_{\max} = \begin{cases} \min(d/4, \, 30 \text{ cm}) & \text{if } V_{s,\text{req}} > 1.1 \sqrt{f'_c} b d \\ \min(d/2, \, 60 \text{ cm}) & \text{if } V_{s,\text{req}} \le 1.1 \sqrt{f'_c} b d \end{cases}$$
+
+</div>
+
+* **Minimum Shear Reinforcement Ratio:**
+<div align="center">
+
+$$\left(\frac{A_v}{s}\right)_{\min} = \max\left(\frac{0.2 \sqrt{f'_c} b}{f_{yt}}, \, \frac{3.5 b}{f_{yt}}\right)$$
+
+</div>
+
+* **Concrete Web Crushing Limit:**
+<div align="center">
+
+$$V_s \le 2.1 \sqrt{f'_c} b d$$
+
+</div>
+
+</details>
+
+<details>
+<summary><b>Click to expand Module 4: Combined Torsion Formulations</b></summary>
+
+### Combined Torsion Formulations (ACI 318-14 Chapter 22)
+
+*(Note: Torsion equations assume a space truss angle of $\theta = 45^\circ$, giving $\cot \theta = 1.0$.)*
+
+* **Torsion Core Geometry (Stirrup Centerline):**
+<div align="center">
+
+$$x_1 = b - 2(\text{cover} + d_{\text{stirrup}}/2), \quad y_1 = h - 2(\text{cover} + d_{\text{stirrup}}/2)$$
+
+$$A_{oh} = x_1 \cdot y_1, \quad p_h = 2(x_1 + y_1), \quad A_o = 0.85 A_{oh}$$
+
+</div>
+
+* **Threshold and Cracking Torsion Capacities ($\phi = 0.75$):**
+<div align="center">
+
+$$\phi T_{\text{th}} = \phi \cdot 0.27 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{p_{\text{cp}}}\right) \sqrt{1 + \frac{P_u}{0.33 A_g \sqrt{f'_c}}}$$
+
+$$\phi T_{\text{cr}} = \phi \cdot 1.1 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{p_{\text{cp}}}\right)$$
+
+</div>
+
+* **Combined Shear-Torsion Web Crushing Check ($\phi = 0.75$):**
+<div align="center">
+
+$$v_u = \frac{V_u}{b d}, \quad v_t = \frac{T_u p_h}{1.7 A_{oh}^2}$$
+
+$$\sqrt{v_u^2 + v_t^2} \le \phi \left(\frac{V_c}{b d} + 2.1\sqrt{f'_c}\right)$$
+
+</div>
+
+* **Transverse Torsion Reinforcement (per single stirrup leg):**
+<div align="center">
+
+$$\frac{A_t}{s} = \frac{T_u}{2 \phi A_o f_{yt} \cot \theta}$$
+
+</div>
+
+* **Maximum Torsion Stirrup Spacing Limit:**
+<div align="center">
+
+$$s_{\max,\text{tor}} = \min(p_h / 8, \, 30 \text{ cm})$$
+
+</div>
+
+* **Longitudinal Torsion Reinforcement ($A_l$):**
+<div align="center">
+
+$$A_{l,\text{req}} = \left(\frac{A_t}{s}\right) p_h \left(\frac{f_{yt}}{f_y}\right) \cot^2 \theta$$
+
+$$A_{l,\min} = \frac{1.33 \sqrt{f'_c} A_{\text{cp}}}{f_y} - \left(\frac{A_t}{s}\right)_{\text{clamped}} p_h \left(\frac{f_{yt}}{f_y}\right)$$
+
+$$\text{where } \left(\frac{A_t}{s}\right)_{\text{clamped}} = \max\left(\frac{A_t}{s}, \, \frac{1.78 b}{f_{yt}}\right)$$
+
+$$A_l = \max\left(A_{l,\text{req}}, \, \max(0.0, \, A_{l,\min})\right)$$
+
+</div>
+
+</details>
+
+---
+
+## Quick Start & Installation
 
 ### Requirements
 - **Python:** 3.9 or higher
@@ -53,177 +286,21 @@ graph LR
 
 2. Run the application:
    ```bash
-   python "concrete beam reinforcement ACI 318-14.py"
+   python "concrete_beam_reinforcement_ACI318-14.py"
    ```
 
 ---
 
-## Validation & Benchmarks
-
-The program was verified against three independent hand calculations performed per ACI 318-14. Case 1 checks baseline behavior under low torsion. Case 2 deliberately stacks complex branch conditions (two-layer reinforcement, high-strength concrete, axial tension/compression, full torsion interaction) to audit formulation edge cases. Case 3 is intentionally non-compliant to confirm that the program never reports an unsafe section as SAFE. All technical deviations are detailed in [Known Deviations & Engineering Assumptions](#known-deviations--engineering-assumptions).
-
-| Case | Question Answered | What It Exercises | Result Summary | Hand Calculation |
-| :--- | :--- | :--- | :--- | :---: |
-| **Case 1: Base** | Is the program accurate under normal design conditions? | Singly and doubly reinforced sections, $\phi = 0.90$, $T_u < \phi T_{\text{th}}$ (torsion correctly neglected). | $\phi M_n$ and $\phi V_n$ differ by $< 0.1\%$ vs hand calculations. | [PDF](./validation/case1_hand_calc.pdf) |
-| **Case 2: Edge** | How does the engine perform when complex conditions stack? | 2-layer steel layout, high-strength concrete ($f'_c = 350$ ksc), axial tension/compression, full torsion design. | Documented deviations observed ($\phi / \phi M_n \approx 1.9\%$ with $\epsilon_t \approx 7.2\%$, $s_{\max} \approx +100\%$, $T_{\text{th}} \approx \pm 35\%$, $A_l \approx +112\%$). Section END correctly flagged UNSAFE ($UR = 1.097$). | [PDF](./validation/case2_hand_calc.pdf) |
-| **Case 3: Fail** | Does the program correctly reject unsafe or non-compliant sections? | Tight rebar spacing violation, $\epsilon_t < 0.004$, $A_s < A_{s,\min}$, $P_u$ cap exceedance, $s > s_{\max}$, $M_u > \phi M_n$, $V_u > \phi V_n$. | Successfully rejects non-compliant inputs ($3/3$ sections flagged as UNSAFE). | [PDF](./validation/case3_hand_calc.pdf) |
-
----
-
-## Known Deviations & Engineering Assumptions
-
-During benchmark validation against hand calculations, the following code implementation choices and analytical assumptions were documented:
-
-1. **Uncoupled Torsional Threshold ($\phi T_{\text{th}}$ vs Axial Load $P_u$):** The program evaluates uncoupled pure torsion threshold strength ($\phi T_{\text{th}}$) without the axial modifier term $\sqrt{1 + \frac{P_u}{1.06 A_g \sqrt{f'_c}}}$ in MKS units (where $P_u > 0$ for compression and $P_u < 0$ for tension, per ACI 318-14 Sec 22.7.4.1). Under net axial tension, this yields a higher, unconservative threshold (+35% at INITIAL section in Case 2). *Refactoring to couple $P_u$ in $T_{\text{th}}$ is scheduled for the next patch.*
-2. **Tensile Strain Depth Baseline ($d$ vs $d_t$):** Net tensile strain $\epsilon_t$ is evaluated at the centroid depth of the tension steel group ($d$) rather than the extreme tension bar layer depth ($d_t$). This is a deliberate conservative deviation from ACI 21.2.2, resulting in lower-bound $\phi$ factor mapping on multi-layer beams.
-3. **Concrete Displacement by Compression Steel ($d' < c$):** Concrete area displaced by compression steel is subtracted whenever $d' < c$ ($C_c = 0.85 f'_c a b - 0.85 f'_c A'_s$). This introduces a minor 1.1%–1.7% shift in neutral axis depth $c$ compared to hand calculations that check $d' < a$.
-4. **Stirrup Spacing Limit Threshold Baseline ($s_{\max}$):** The stirrup spacing threshold comparator ($1.1 \sqrt{f'_c} b d$) in Table 9.7.6.2.2 is evaluated against required stirrup demand ($V_{s,\text{req}}$) rather than provided capacity ($V_{s,\text{prov}}$). In Case 2, this permitted $s_{\max} = d/2$ instead of $d/4$ ($\approx +100\%$ higher spacing limit), which is less conservative than checking $V_{s,\text{prov}}$.
-5. **Longitudinal Torsion Steel ($A_l$) Credit:** Excess flexural tension and compression reinforcement ($A_{s,\text{prov}} - A_{s,\text{req}}$) are credited toward longitudinal torsion steel capacity per ACI 318-14 Sec 9.5.4.3, 9.5.4.4, and Sec 22.7.6.2.2 (+112% capacity credit compared to web-bar-only accounting).
-
----
-
-## Theory & Mathematical Formulations
-
-*(Note: $1.06 \sqrt{f'_c}$ is used in the $T_{\text{th}}$ axial modifier term for exact MKS conversion from $0.33 \sqrt{f'_c} \text{ MPa}$; $1.1 \sqrt{f'_c}$ is used elsewhere for consistency with common Thai MKS engineering practice.)*
-
-<details>
-<summary><b>Click to expand Module 2: Flexure Engine Formulations</b></summary>
-
-### Flexure Formulations (ACI 318-14 Chapter 22)
-
-* **Whitney Stress Block Depth:**
-
-$$a = \beta_1 c$$
-
-* **Concrete Compression Force:**
-
-$$C_c = 0.85 f'_c a b$$
-
-* **Steel Stress (bounded by yield limits):**
-
-$$f_{si} = \max\left(-f_y, \, \min(f_y, \, E_s \epsilon_{si})\right)$$
-
-* **Section Force Equilibrium:**
-
-$$C_c + \sum C_s - \sum T_s - P_u = 0$$
-
-* **Strength Reduction Factor Mapping ($\phi$):**
-
-$$\phi = \begin{cases} 0.90 & \text{if } \epsilon_t \ge 0.005 \text{ (Tension-controlled)} \\ 0.65 + 0.25 \frac{\epsilon_t - \epsilon_{ty}}{0.005 - \epsilon_{ty}} & \text{if } \epsilon_{ty} < \epsilon_t < 0.005 \text{ (Transition)} \\ 0.65 & \text{if } \epsilon_t \le \epsilon_{ty} \text{ (Compression-controlled)} \end{cases}$$
-
-* **Nominal Moment Capacity (about centroid $y_c = h/2$):**
-
-$$M_n = \sum F_i (y_i - y_c)$$
-
-* **Design Moment Verification:**
-
-$$\phi M_n \ge M_u$$
-
-* **Beam Module Axial Limit (ACI 9.3.1.1):**
-
-$$P_u \le 0.10 f'_c A_g$$
-
-</details>
-
-<details>
-<summary><b>Click to expand Module 3: Shear Engine Formulations</b></summary>
-
-### Shear Formulations (ACI 318-14 Chapter 22)
-
-* **Concrete Shear Strength $V_c$ ($\phi = 0.75$ applied to $V_n$ per ACI Table 21.2.1):**
-  * **Axial Compression ($P_u > 0$):**
-
-$$V_c = 0.53 \left(1 + \frac{P_u}{140 A_g}\right) \sqrt{f'_c} b d$$
-
-  * **Axial Tension ($P_u < 0$):**
-
-$$V_c = \max\left(0, \, 0.53 \left(1 + \frac{P_u}{35 A_g}\right) \sqrt{f'_c} b d\right)$$
-
-  * **Zero Axial Load ($P_u = 0$):**
-
-$$V_c = 0.53 \sqrt{f'_c} b d$$
-
-* **Stirrup Shear Strength Contribution ($V_s$):**
-
-$$V_s = \frac{A_v f_{yt} d}{s}$$
-
-* **Design Shear Strength Verification:**
-
-$$\phi V_n = \phi (V_c + V_s) \ge V_u \quad (\text{with } \phi = 0.75)$$
-
-* **Stirrup Spacing Limits ($s_{\text{max}}$):**
-
-$$s_{\text{max}} = \begin{cases} \min(d/4, \, 30 \text{ cm}) & \text{if } V_{s,\text{req}} > 1.1 \sqrt{f'_c} b d \\ \min(d/2, \, 60 \text{ cm}) & \text{if } V_{s,\text{req}} \le 1.1 \sqrt{f'_c} b d \end{cases}$$
-
-* **Minimum Shear Reinforcement Ratio:**
-
-$$\left(\frac{A_v}{s}\right)_{\text{min}} = \max\left(\frac{0.2 \sqrt{f'_c} b}{f_{yt}}, \, \frac{3.5 b}{f_{yt}}\right)$$
-
-* **Maximum Stirrup Shear Capacity Limit:**
-
-$$V_s \le 2.1 \sqrt{f'_c} b d$$
-
-</details>
-
-<details>
-<summary><b>Click to expand Module 4: Combined Torsion Formulations</b></summary>
-
-### Combined Torsion Formulations (ACI 318-14 Chapter 22)
-
-*(Note: Torsion equations assume a space truss angle of $\theta = 45^\circ$, giving $\cot \theta = 1.0$.)*
-
-* **Torsion Geometry (Stirrup Centerline):**
-
-$$x_1 = b - 2(\text{cover} + d_{\text{stirrup}}/2), \quad y_1 = h - 2(\text{cover} + d_{\text{stirrup}}/2)$$
-
-$$A_{oh} = x_1 \cdot y_1, \quad p_h = 2(x_1 + y_1), \quad A_o = 0.85 A_{oh}$$
-
-* **Design Torsional Threshold and Cracking Strengths ($\phi = 0.75$):**
-
-$$\phi T_{\text{th}} = \phi \cdot 0.27 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{P_{\text{cp}}}\right), \quad \phi T_{\text{cr}} = \phi \cdot 1.1 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{P_{\text{cp}}}\right)$$
-
-* **Combined Shear-Torsion Web Crushing Limit ($\phi = 0.75$):**
-
-$$\sqrt{\left(\frac{V_u}{b d}\right)^2 + \left(\frac{T_u p_h}{1.7 A_{oh}^2}\right)^2} \le \phi \left(\frac{V_c}{b d} + 2.1\sqrt{f'_c}\right)$$
-
-* **Transverse Torsion Reinforcement (per single leg):**
-
-$$\frac{A_t}{s} = \frac{T_u}{2 \phi A_o f_{yt}} \quad (\phi = 0.75)$$
-
-* **Governing Transverse Stirrup Ratio:**
-
-$$\text{Governing ratio} = \max\left(\frac{A_{v,\text{shear}}}{s} + \frac{2 A_t}{s}, \, \left(\frac{A_v}{s}\right)_{\text{min}}\right)$$
-
-* **Maximum Torsion Stirrup Spacing Limit:**
-
-$$s_{\text{max}} = \min(p_h / 8, \, 30 \text{ cm})$$
-
-* **Longitudinal Torsion Reinforcement ($A_l$):**
-
-$$A_l = \max\left(A_{l,\text{req}}, \, \max(0.0, \, A_{l,\text{min}})\right)$$
-
-$$A_{l,\text{req}} = \left(\frac{A_t}{s}\right) p_h \left(\frac{f_{yt}}{f_y}\right)$$
-
-$$A_{l,\text{min}} = \frac{1.33 \sqrt{f'_c} A_{\text{cp}}}{f_y} - \left(\frac{A_t}{s}\right)_{\text{clamped}} p_h \left(\frac{f_{yt}}{f_y}\right)$$
-
-$$\text{where } \left(\frac{A_t}{s}\right)_{\text{clamped}} = \max\left(\frac{A_t}{s}, \, \frac{1.78 b}{f_{yt}}\right)$$
-
-</details>
-
----
-
-## Workflow & Data Example
-
-The application handles configurations via an `input.json` file located in the root directory. You can edit variables via the file directly or use the interactive Tkinter entry bars.
+## Workflow & Data Example (`input.json`)
 
 ```jsonc
 {
   "fc_prime": 240,       // Concrete compressive strength (kg/cm²)
-  "fy": 4000,            // Longitudinal reinforcement yield strength (kg/cm²)
-  "fy_shear": 4000,      // Stirrup yield strength (kg/cm²)
-  "b": 30, "h": 60,      // Cross section width and height (cm)
-  "covering": 6,         // Concrete cover to stirrup outer edge (cm)
-  "stirrup_dia": 9,      // Stirrup bar diameter (mm)
+  "fy": 4000,            // Longitudinal steel yield strength (kg/cm²)
+  "fy_shear": 4000,      // Stirrup steel yield strength (kg/cm²)
+  "b": 30, "h": 60,      // Beam section width and total height (cm)
+  "covering": 6,         // Cover to stirrup outer edge (cm)
+  "stirrup_dia": 9,      // Stirrup diameter (mm)
   "stirrup_spacing": 20, // Stirrup spacing (cm)
   "stirrup_legs": 2,     // Number of shear legs
   "forces": {
@@ -245,7 +322,7 @@ The application handles configurations via an `input.json` file located in the r
 
 - **Cross-Section Geometry:** Bounded strictly to solid rectangular sections. T-beams, L-beams, or hollow box sections are excluded.
 - **Seismic Detailing Scope:** Calculations assume ordinary moment frame members. Special Moment Frame (SMF) seismic hoop spacing and capacity design provisions are out of scope.
-- **Limit States:** Applies strictly to Ultimate Strength Limit States (ULS). Serviceability checks (immediate/long-term deflections, crack width limits) must be performed independently.
+- **Limit States:** Applies strictly to Ultimate Strength Limit States (ULS). Serviceability checks (immediate/long-term deflections, crack width limits) must be executed separately.
 
 ---
 
@@ -265,7 +342,7 @@ Developed by **ARIYA**:
 - Tkinter UI components and visual canvas rendering.
 
 ### Development & AI Co-Piloting
-- **Engineering Architecture & Validation:** Conceptualized, formulated, and engineered by **ARIYA**. All mathematical formulations, numerical solvers, and verification checks were independently verified against hand calculations.
+- **Engineering Architecture & Validation:** Conceptualized, formulated, and engineered by **ARIYA**. All mathematical formulations, numerical solvers, and verification checks were independently audited against hand calculations.
 - **Code Implementation:** Artificial intelligence tools were utilized as a co-pilot to assist in Python code implementation, UI canvas prototyping, and documentation formatting under strict engineering supervision.
 
 ### Academic & Compliance References
