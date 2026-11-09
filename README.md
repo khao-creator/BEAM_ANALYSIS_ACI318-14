@@ -92,29 +92,36 @@ During benchmark validation against hand calculations, the following code implem
 ### Flexure Formulations (ACI 318-14 Chapter 22)
 
 * **Whitney Stress Block Depth:**
-  $$a = \beta_1 c$$
+
+$$a = \beta_1 c$$
 
 * **Concrete Compression Force:**
-  $$C_c = 0.85 f'_c a b$$
+
+$$C_c = 0.85 f'_c a b$$
 
 * **Steel Stress (bounded by yield limits):**
-  $$f_{si} = \max\left(-f_y, \, \min(f_y, \, E_s \epsilon_{si})\right)$$
+
+$$f_{si} = \max\left(-f_y, \, \min(f_y, \, E_s \epsilon_{si})\right)$$
 
 * **Section Force Equilibrium:**
-  $$C_c + \sum C_s - \sum T_s - P_u = 0$$
+
+$$C_c + \sum C_s - \sum T_s - P_u = 0$$
 
 * **Strength Reduction Factor Mapping ($\phi$):**
 
 $$\phi = \begin{cases} 0.90 & \text{if } \epsilon_t \ge 0.005 \text{ (Tension-controlled)} \\ 0.65 + 0.25 \frac{\epsilon_t - \epsilon_{ty}}{0.005 - \epsilon_{ty}} & \text{if } \epsilon_{ty} < \epsilon_t < 0.005 \text{ (Transition)} \\ 0.65 & \text{if } \epsilon_t \le \epsilon_{ty} \text{ (Compression-controlled)} \end{cases}$$
 
 * **Nominal Moment Capacity (about centroid $y_c = h/2$):**
-  $$M_n = \sum F_i (y_i - y_c)$$
+
+$$M_n = \sum F_i (y_i - y_c)$$
 
 * **Design Moment Verification:**
-  $$\phi M_n \ge M_u$$
+
+$$\phi M_n \ge M_u$$
 
 * **Beam Module Axial Limit (ACI 9.3.1.1):**
-  $$P_u \le 0.10 f'_c A_g$$
+
+$$P_u \le 0.10 f'_c A_g$$
 
 </details>
 
@@ -125,27 +132,36 @@ $$\phi = \begin{cases} 0.90 & \text{if } \epsilon_t \ge 0.005 \text{ (Tension-co
 
 * **Concrete Shear Strength $V_c$ ($\phi = 0.75$ applied to $V_n$ per ACI Table 21.2.1):**
   * **Axial Compression ($P_u > 0$):**
-    $$V_c = 0.53 \left(1 + \frac{P_u}{140 A_g}\right) \sqrt{f'_c} b d$$
+
+$$V_c = 0.53 \left(1 + \frac{P_u}{140 A_g}\right) \sqrt{f'_c} b d$$
+
   * **Axial Tension ($P_u < 0$):**
-    $$V_c = \max\left(0, \, 0.53 \left(1 + \frac{P_u}{35 A_g}\right) \sqrt{f'_c} b d\right)$$
+
+$$V_c = \max\left(0, \, 0.53 \left(1 + \frac{P_u}{35 A_g}\right) \sqrt{f'_c} b d\right)$$
+
   * **Zero Axial Load ($P_u = 0$):**
-    $$V_c = 0.53 \sqrt{f'_c} b d$$
+
+$$V_c = 0.53 \sqrt{f'_c} b d$$
 
 * **Stirrup Shear Strength Contribution ($V_s$):**
-  $$V_s = \frac{A_v f_{yt} d}{s}$$
+
+$$V_s = \frac{A_v f_{yt} d}{s}$$
 
 * **Design Shear Strength Verification:**
-  $$\phi V_n = \phi (V_c + V_s) \ge V_u \quad (\text{with } \phi = 0.75)$$
+
+$$\phi V_n = \phi (V_c + V_s) \ge V_u \quad (\text{with } \phi = 0.75)$$
 
 * **Stirrup Spacing Limits ($s_{\text{max}}$):**
 
 $$s_{\text{max}} = \begin{cases} \min(d/4, \, 30 \text{ cm}) & \text{if } V_{s,\text{req}} > 1.1 \sqrt{f'_c} b d \\ \min(d/2, \, 60 \text{ cm}) & \text{if } V_{s,\text{req}} \le 1.1 \sqrt{f'_c} b d \end{cases}$$
 
 * **Minimum Shear Reinforcement Ratio:**
-  $$\left(\frac{A_v}{s}\right)_{\text{min}} = \max\left(\frac{0.2 \sqrt{f'_c} b}{f_{yt}}, \, \frac{3.5 b}{f_{yt}}\right)$$
+
+$$\left(\frac{A_v}{s}\right)_{\text{min}} = \max\left(\frac{0.2 \sqrt{f'_c} b}{f_{yt}}, \, \frac{3.5 b}{f_{yt}}\right)$$
 
 * **Maximum Stirrup Shear Capacity Limit:**
-  $$V_s \le 2.1 \sqrt{f'_c} b d$$
+
+$$V_s \le 2.1 \sqrt{f'_c} b d$$
 
 </details>
 
@@ -157,29 +173,40 @@ $$s_{\text{max}} = \begin{cases} \min(d/4, \, 30 \text{ cm}) & \text{if } V_{s,\
 *(Note: Torsion equations assume a space truss angle of $\theta = 45^\circ$, giving $\cot \theta = 1.0$.)*
 
 * **Torsion Geometry (Stirrup Centerline):**
-  $$x_1 = b - 2(\text{cover} + d_{\text{stirrup}}/2), \quad y_1 = h - 2(\text{cover} + d_{\text{stirrup}}/2)$$
-  $$A_{oh} = x_1 \cdot y_1, \quad p_h = 2(x_1 + y_1), \quad A_o = 0.85 A_{oh}$$
+
+$$x_1 = b - 2(\text{cover} + d_{\text{stirrup}}/2), \quad y_1 = h - 2(\text{cover} + d_{\text{stirrup}}/2)$$
+
+$$A_{oh} = x_1 \cdot y_1, \quad p_h = 2(x_1 + y_1), \quad A_o = 0.85 A_{oh}$$
 
 * **Design Torsional Threshold and Cracking Strengths ($\phi = 0.75$):**
-  $$\phi T_{\text{th}} = \phi \cdot 0.27 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{P_{\text{cp}}}\right), \quad \phi T_{\text{cr}} = \phi \cdot 1.1 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{P_{\text{cp}}}\right)$$
+
+$$\phi T_{\text{th}} = \phi \cdot 0.27 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{P_{\text{cp}}}\right), \quad \phi T_{\text{cr}} = \phi \cdot 1.1 \sqrt{f'_c} \left(\frac{A_{\text{cp}}^2}{P_{\text{cp}}}\right)$$
 
 * **Combined Shear-Torsion Web Crushing Limit ($\phi = 0.75$):**
-  $$\sqrt{\left(\frac{V_u}{b d}\right)^2 + \left(\frac{T_u p_h}{1.7 A_{oh}^2}\right)^2} \le \phi \left(\frac{V_c}{b d} + 2.1\sqrt{f'_c}\right)$$
+
+$$\sqrt{\left(\frac{V_u}{b d}\right)^2 + \left(\frac{T_u p_h}{1.7 A_{oh}^2}\right)^2} \le \phi \left(\frac{V_c}{b d} + 2.1\sqrt{f'_c}\right)$$
 
 * **Transverse Torsion Reinforcement (per single leg):**
-  $$\frac{A_t}{s} = \frac{T_u}{2 \phi A_o f_{yt}} \quad (\phi = 0.75)$$
+
+$$\frac{A_t}{s} = \frac{T_u}{2 \phi A_o f_{yt}} \quad (\phi = 0.75)$$
 
 * **Governing Transverse Stirrup Ratio:**
-  $$\text{Governing ratio} = \max\left(\frac{A_{v,\text{shear}}}{s} + \frac{2 A_t}{s}, \, \left(\frac{A_v}{s}\right)_{\text{min}}\right)$$
+
+$$\text{Governing ratio} = \max\left(\frac{A_{v,\text{shear}}}{s} + \frac{2 A_t}{s}, \, \left(\frac{A_v}{s}\right)_{\text{min}}\right)$$
 
 * **Maximum Torsion Stirrup Spacing Limit:**
-  $$s_{\text{max}} = \min(p_h / 8, \, 30 \text{ cm})$$
+
+$$s_{\text{max}} = \min(p_h / 8, \, 30 \text{ cm})$$
 
 * **Longitudinal Torsion Reinforcement ($A_l$):**
-  $$A_l = \max\left(A_{l,\text{req}}, \, \max(0.0, \, A_{l,\text{min}})\right)$$
-  $$A_{l,\text{req}} = \left(\frac{A_t}{s}\right) p_h \left(\frac{f_{yt}}{f_y}\right)$$
-  $$A_{l,\text{min}} = \frac{1.33 \sqrt{f'_c} A_{\text{cp}}}{f_y} - \left(\frac{A_t}{s}\right)_{\text{clamped}} p_h \left(\frac{f_{yt}}{f_y}\right)$$
-  $$\text{where } \left(\frac{A_t}{s}\right)_{\text{clamped}} = \max\left(\frac{A_t}{s}, \, \frac{1.78 b}{f_{yt}}\right)$$
+
+$$A_l = \max\left(A_{l,\text{req}}, \, \max(0.0, \, A_{l,\text{min}})\right)$$
+
+$$A_{l,\text{req}} = \left(\frac{A_t}{s}\right) p_h \left(\frac{f_{yt}}{f_y}\right)$$
+
+$$A_{l,\text{min}} = \frac{1.33 \sqrt{f'_c} A_{\text{cp}}}{f_y} - \left(\frac{A_t}{s}\right)_{\text{clamped}} p_h \left(\frac{f_{yt}}{f_y}\right)$$
+
+$$\text{where } \left(\frac{A_t}{s}\right)_{\text{clamped}} = \max\left(\frac{A_t}{s}, \, \frac{1.78 b}{f_{yt}}\right)$$
 
 </details>
 
