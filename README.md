@@ -1,5 +1,9 @@
 # BEAM ANALYSIS ACI 318-14
 
+<p align="center">
+  <img src="assets/Screenshot.png" alt="Beam Analysis GUI Interface" width="100%">
+</p>
+
 A high-precision Python desktop application for the structural verification and safety audit of reinforced concrete beam sections under flexure, shear, and combined torsion according to ACI 318-14 / ACI 318M-14 specifications in Metric MKS units ($\text{kg}$, $\text{cm}$, $\text{ksc}$, $\text{ton}$, $\text{t-m}$).
 
 ## Features & Visual Engine Pipeline
