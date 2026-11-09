@@ -104,7 +104,8 @@ During benchmark validation against hand calculations, the following code implem
   $$C_c + \sum C_s - \sum T_s - P_u = 0$$
 
 * **Strength Reduction Factor Mapping ($\phi$):**
-  $$\phi = \begin{cases} 0.90 & \text{if } \epsilon_t \ge 0.005 \text{ (Tension-controlled)} \\ 0.65 + 0.25 \frac{\epsilon_t - \epsilon_{ty}}{0.005 - \epsilon_{ty}} & \text{if } \epsilon_{ty} < \epsilon_t < 0.005 \text{ (Transition)} \\ 0.65 & \text{if } \epsilon_t \le \epsilon_{ty} \text{ (Compression-controlled)} \end{cases}$$
+
+$$\phi = \begin{cases} 0.90 & \text{if } \epsilon_t \ge 0.005 \text{ (Tension-controlled)} \\ 0.65 + 0.25 \frac{\epsilon_t - \epsilon_{ty}}{0.005 - \epsilon_{ty}} & \text{if } \epsilon_{ty} < \epsilon_t < 0.005 \text{ (Transition)} \\ 0.65 & \text{if } \epsilon_t \le \epsilon_{ty} \text{ (Compression-controlled)} \end{cases}$$
 
 * **Nominal Moment Capacity (about centroid $y_c = h/2$):**
   $$M_n = \sum F_i (y_i - y_c)$$
@@ -137,7 +138,8 @@ During benchmark validation against hand calculations, the following code implem
   $$\phi V_n = \phi (V_c + V_s) \ge V_u \quad (\text{with } \phi = 0.75)$$
 
 * **Stirrup Spacing Limits ($s_{\text{max}}$):**
-  $$s_{\text{max}} = \begin{cases} \min(d/4, \, 30 \text{ cm}) & \text{if } V_{s,\text{req}} > 1.1 \sqrt{f'_c} b d \\ \min(d/2, \, 60 \text{ cm}) & \text{if } V_{s,\text{req}} \le 1.1 \sqrt{f'_c} b d \end{cases}$$
+
+$$s_{\text{max}} = \begin{cases} \min(d/4, \, 30 \text{ cm}) & \text{if } V_{s,\text{req}} > 1.1 \sqrt{f'_c} b d \\ \min(d/2, \, 60 \text{ cm}) & \text{if } V_{s,\text{req}} \le 1.1 \sqrt{f'_c} b d \end{cases}$$
 
 * **Minimum Shear Reinforcement Ratio:**
   $$\left(\frac{A_v}{s}\right)_{\text{min}} = \max\left(\frac{0.2 \sqrt{f'_c} b}{f_{yt}}, \, \frac{3.5 b}{f_{yt}}\right)$$
