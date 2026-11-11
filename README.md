@@ -1,4 +1,4 @@
-# BEAM ANALYSIS ACI 318-14
+ # BEAM ANALYSIS ACI 318-14
 
 <p align="center">
   <img src="assets/Screenshot.png" alt="Beam Analysis GUI Interface" width="100%">
@@ -26,7 +26,7 @@ graph LR
 
 ### Module Summary & Engineering Intuition
 
-* **Module 1 – Ingestion & Layer Geometry:** Ingests MKS metric inputs ($b, h, f'_c, f_y, f_{yt}$), computes rebar layer centroids ($y_{\text{bar}}$), effective depths ($d, d'$), and verifies bar clearance limits.
+* **Module 1 – Ingestion & Layer Geometry:** Ingests MKS metric inputs (<i>b</i>, <i>h</i>, <i>f</i>'<sub>c</sub>, <i>f</i><sub>y</sub>, <i>f</i><sub>yt</sub>),, computes rebar layer centroids ($y_{\text{bar}}$), effective depths ($d, d'$), and verifies bar clearance limits.
 
 * **Module 2 – Strain Compatibility Flexure:** Solves strain equilibrium using numerical bisection. Maps section ductility using net tensile strain ($\epsilon_t$) to determine strength reduction factor ($\phi = 0.65 - 0.90$).
 
@@ -50,7 +50,7 @@ The calculation engine has been verified against three independent hand-calculat
 | ----- | ----- | ----- | ----- | ----- | 
 | **Case 1: Base** | Normal Baseline Design | Singly & doubly reinforced sections, tension-controlled $\phi = 0.90$, $T_u \le \phi T_{\text{th}}$ (torsion safely neglected). | $\phi M_n$ and $\phi V_n$ differ by $< 0.1\%$. | [PDF Hand Calc](./validation/case1_hand_calc.pdf) | 
 | **Case 2: Edge** | Complex Stacked Edge Cases | 2-layer steel, high-strength concrete ($f'_c = 350\text{ ksc}$), axial tension & compression, full torsion interaction. | Documented minor formulation shifts ($\approx 1.9\%$ on $\phi M_n$). END section correctly flagged **UNSAFE** ($UR = 1.097$). | [PDF Hand Calc](./validation/case2_hand_calc.pdf) | 
-| **Case 3: Fail** | Unsafe Section Gatekeeping | Tight bar clearance violation, $\epsilon_t < 0.004$, $A_s < A_{s,\min}$, $P_u > 0.10 f'_c A_g$, $s > s_{\max}$, demand exceedance ($M_u > \phi M_n$). | 100% Detection Rate ($3/3$ non-compliant sections flagged **UNSAFE**). | [PDF Hand Calc](./validation/case3_hand_calc.pdf) | 
+| **Case 3: Fail** | Unsafe Section Gatekeeping | Tight bar clearance violation, <i>&epsilon;</i><sub>t</sub> &lt; 0.004, <i>A</i><sub>s</sub> &lt; <i>A</i><sub>s,min</sub>, <i>P</i><sub>u</sub> &gt; 0.10 <i>f</i>'<sub>c</sub> <i>A</i><sub>g</sub>, <i>s</i> &gt; <i>s</i><sub>max</sub>, demand exceedance (<i>M</i><sub>u</sub> &gt; <i>&phi;</i><i>M</i><sub>n</sub>).| 100% Detection Rate ($3/3$ non-compliant sections flagged **UNSAFE**). | [PDF Hand Calc](./validation/case3_hand_calc.pdf) | 
 
 ## Known Deviations & Engineering Assumptions
 
@@ -60,7 +60,7 @@ During benchmark audits against hand calculations, five specific implementation 
 
    * *Implementation:* The engine evaluates pure torsional threshold ($\phi T_{\text{th}}$) uncoupled from axial load $P_u$.
 
-   * *Engineering Impact:* Under net axial tension ($P_u < 0$), this yields a slightly higher threshold (+35% at INITIAL section in Case 2) compared to including the axial factor $\sqrt{1 + \frac{P_u}{0.33 A_g \sqrt{f'_c}}}$.
+   <i>Engineering Impact:</i> Under net axial tension (<i>P</i><sub>u</sub> &lt; 0), this yields a slightly higher threshold (+35% at INITIAL section in Case 2) compared to including the axial factor &radic;(1 + <i>P</i><sub>u</sub> / (0.33<i>A</i><sub>g</sub>&radic;<i>f</i>'<sub>c</sub>)).
 
 2. **Tensile Strain Depth Baseline (**$d$ **vs** $d_t$**):**
 
@@ -76,7 +76,7 @@ During benchmark audits against hand calculations, five specific implementation 
 
 4. **Stirrup Spacing Limit Threshold Baseline (**$s_{\max}$**):**
 
-   * *Implementation:* The stirrup spacing limit comparator ($1.1 \sqrt{f'_c} b d$) in Table 9.7.6.2.2 is evaluated against required stirrup demand ($V_{s,\text{req}}$) rather than provided capacity ($V_{s,\text{prov}}$).
+   * *Implementation:* The stirrup spacing limit comparator (1.1&radic;<i>f</i>'<sub>c</sub> <i>b</i> <i>d</i>) in Table 9.7.6.2.2 is evaluated against required stirrup demand (<i>V</i><sub>s,req</sub>) rather than provided capacity ($V_{s,\text{prov}}$).
 
 5. **Longitudinal Torsion Steel (**$A_l$**) Credit:**
 
@@ -84,7 +84,7 @@ During benchmark audits against hand calculations, five specific implementation 
 
 ## Theory & Mathematical Formulations
 
-> **Note:** In Metric MKS units, $1.06 \sqrt{f'_c}$ corresponds to the exact SI conversion of $0.33 \sqrt{f'_c}\text{ MPa}$, while $1.1 \sqrt{f'_c}$ is used for consistency with Thai engineering practice.
+> <b>Note:</b> In Metric MKS units, 1.06&radic;<i>f</i>'<sub>c</sub> corresponds to the exact SI conversion of 0.33&radic;<i>f</i>'<sub>c</sub> MPa, while 1.1&radic;<i>f</i>'<sub>c</sub> is used for consistency with Thai engineering practice.
 
 ### Flexure Formulations (ACI 318-14 Chapter 22)
 
